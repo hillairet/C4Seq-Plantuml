@@ -1,0 +1,32 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/hillairet/C4Seq-Plantuml/main/c4seq.puml
+!include <logos/python>
+!include <logos/mongodb>
+!include <logos/redis>
+!include <logos/nodejs>
+!include <logos/mysql>
+!include <logos/memcached>
+
+title Order and discount processing
+
+Person("dude", "Dude")
+Container("container", "App", $sprite=python)
+ContainerDb("containerdb", "Database", "mongodb", "descr", $sprite=mongodb) 
+ContainerQueue("containerqueue", "Queue", "redis", "A useful queue", $sprite=redis)
+Container_Ext("container_ext", "External service", $sprite=nodejs)
+ContainerDb_Ext("containerdb_ext", "External DB", $sprite=mysql)
+ContainerQueue_Ext("containerqueue_ext", "External queue", $sprite=memcached)
+
+dude -> container: Do things
+activate dude
+
+container -> containerdb: Read things
+container -> containerqueue: Push item
+container -> container_ext: Call API
+container -> containerdb_ext: Read other things
+container -> containerqueue_ext: Push another item
+
+container --> dude: Done
+
+deactivate dude
+@enduml
