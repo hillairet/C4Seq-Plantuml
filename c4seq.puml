@@ -12,6 +12,7 @@
 !global $EXTERNAL_CONTAINER_BORDER_COLOR = "#A6A6A6"
 !global $ELEMENT_FONT_COLOR = "#FFFFFF"
 !global $TECHN_FONT_SIZE = 12
+!global $ARROW_COLOR = "#666666"
 
 ' Sprites
 ' ##################################
@@ -318,7 +319,8 @@ skinparam queue<<external_container>>{
   borderColor $EXTERNAL_CONTAINER_BORDER_COLOR
 }
 
-skinparam ArrowFontColor #000000
+skinparam ArrowFontColor $ARROW_COLOR
+skinparam ArrowColor $ARROW_COLOR
 skinparam sequence {
   LifeLineBackgroundColor #1168BD
   LifeLineBorderColor #3C7FC0
