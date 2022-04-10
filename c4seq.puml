@@ -1,0 +1,329 @@
+
+' Colors
+' ##################################
+
+!global $PERSON_BG_COLOR = "#08427B"
+!global $PERSON_BORDER_COLOR = "#073B6F"
+!global $EXTERNAL_PERSON_BG_COLOR = "#686868"
+!global $EXTERNAL_PERSON_BORDER_COLOR = "#8A8A8A"
+!global $CONTAINER_BG_COLOR = "#438DD5"
+!global $CONTAINER_BORDER_COLOR = "#3C7FC0"
+!global $EXTERNAL_CONTAINER_BG_COLOR = "#B3B3B3"
+!global $EXTERNAL_CONTAINER_BORDER_COLOR = "#A6A6A6"
+!global $ELEMENT_FONT_COLOR = "#FFFFFF"
+!global $TECHN_FONT_SIZE = 12
+
+' Sprites
+' ##################################
+
+sprite $person [48x48/16] {
+000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000
+0000000000000000000049BCCA7200000000000000000000
+0000000000000000006EFFFFFFFFB3000000000000000000
+00000000000000001CFFFFFFFFFFFF700000000000000000
+0000000000000001EFFFFFFFFFFFFFF80000000000000000
+000000000000000CFFFFFFFFFFFFFFFF6000000000000000
+000000000000007FFFFFFFFFFFFFFFFFF100000000000000
+00000000000001FFFFFFFFFFFFFFFFFFF900000000000000
+00000000000006FFFFFFFFFFFFFFFFFFFF00000000000000
+0000000000000BFFFFFFFFFFFFFFFFFFFF40000000000000
+0000000000000EFFFFFFFFFFFFFFFFFFFF70000000000000
+0000000000000FFFFFFFFFFFFFFFFFFFFF80000000000000
+0000000000000FFFFFFFFFFFFFFFFFFFFF80000000000000
+0000000000000DFFFFFFFFFFFFFFFFFFFF60000000000000
+0000000000000AFFFFFFFFFFFFFFFFFFFF40000000000000
+00000000000006FFFFFFFFFFFFFFFFFFFE00000000000000
+00000000000000EFFFFFFFFFFFFFFFFFF800000000000000
+000000000000007FFFFFFFFFFFFFFFFFF100000000000000
+000000000000000BFFFFFFFFFFFFFFFF5000000000000000
+0000000000000001DFFFFFFFFFFFFFF70000000000000000
+00000000000000000BFFFFFFFFFFFF500000000000000000
+0000000000000000005DFFFFFFFFA1000000000000000000
+0000000000000000000037ABB96100000000000000000000
+000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000
+000000000000025788300000000005886410000000000000
+000000000007DFFFFFFD9643347BFFFFFFFB400000000000
+0000000004EFFFFFFFFFFFFFFFFFFFFFFFFFFB1000000000
+000000007FFFFFFFFFFFFFFFFFFFFFFFFFFFFFD200000000
+00000006FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE10000000
+0000003FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFB0000000
+000000BFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5000000
+000003FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD000000
+000009FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF200000
+00000DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF600000
+00000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF800000
+00001FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA00000
+00001FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFB00000
+00001FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFB00000
+00001FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFB00000
+00001FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA00000
+00000EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF700000
+000006FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE100000
+0000008FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD3000000
+000000014555555555555555555555555555555300000000
+000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000
+}
+
+
+' Element utils
+' ##################################
+
+!global $defaultPersonSprite = "person"
+
+' format sprite that it can be used in diagram
+!function $getSprite($sprite)
+  ' if it starts with & it's a OpenIconic, details see https://useiconic.com/open/
+  ' if it starts with img: it's an image, details see https://plantuml.com/creole
+  !if (%substr($sprite, 0, 1) != "&" && %substr($sprite, 0, 4) != "img:")
+    !$formatted = "<$" + $sprite + ">"
+  !else
+    !$formatted = "<" + $sprite + ">"
+  !endif
+  !return $formatted
+!endfunction
+
+!function $getPerson($label, $descr, $sprite)
+!if ($sprite == "") && ($defaultPersonSprite != "")
+  !$sprite = $defaultPersonSprite
+!endif
+!if ($descr == "") && ($sprite == "")
+  !return '=='+$label
+!endif
+!if ($descr == "") && ($sprite != "")
+  !return $getSprite($sprite)+'\n=='+$label
+!endif
+!if ($descr != "") && ($sprite == "")
+  !return '=='+$label+'\n\n '+$descr
+!endif
+!if ($descr != "") && ($sprite != "")
+  !return $getSprite($sprite)+'\n=='+$label+'\n\n '+$descr
+!endif
+!endfunction
+
+!function $resetMask()
+  !return "000000"
+!endfunction
+
+!function $combineMasks($mask1, $mask2)
+  !$mask = ""
+  !$mask = $mask + $orFlags(%substr($mask1, 0, 1), %substr($mask2, 0, 1))
+  !$mask = $mask + $orFlags(%substr($mask1, 1, 1), %substr($mask2, 1, 1))
+  !$mask = $mask + $orFlags(%substr($mask1, 2, 1), %substr($mask2, 2, 1))
+  !$mask = $mask + $orFlags(%substr($mask1, 3, 1), %substr($mask2, 3, 1))
+  !$mask = $mask + $orFlags(%substr($mask1, 4, 1), %substr($mask2, 4, 1))
+  !$mask = $mask + $orFlags(%substr($mask1, 5, 1), %substr($mask2, 5, 1))
+  !return $mask
+!endfunction
+
+!function $combineMaskWithTag($mask1, $tag)
+  !$mask2 = %get_variable_value("$" + $tag+ "LegendMask")
+  !if ($mask2 == "")
+    ' !log combineMaskWithTag $mask1, $tag, ... only $mask1
+    !return $mask1
+  !endif
+
+  ' !log combineMaskWithTag $mask1, $tag, $mask2 ... $combineMasks($mask1, $mask2)
+  !return  $combineMasks($mask1, $mask2)
+!endfunction
+
+' element specific (unused are hidden based on mask)
+!unquoted function $toStereos($elementType, $tags)
+  !if (%strlen($tags) == 0)
+    !$stereos = '<<' + $elementType + '>>'
+%set_variable_value("$" + $elementType + "Legend", %true())
+    !return $stereos
+  !endif
+  !$stereos = ''
+  !$mask = $resetMask()
+  !$brPos = %strpos($tags, "+")
+  !while ($brPos >= 0)
+    !$tag = %substr($tags, 0, $brPos)
+    !$stereos = $stereos + '<<' + $tag + '>>'
+    !$mergedMask = $combineMaskWithTag($mask, $tag)
+    !if ($mergedMask != $mask)
+%set_variable_value("$" + $tag + "Legend", %true())
+      !$mask = $mergedMask
+    !endif
+    !$tags = %substr($tags, $brPos+1)
+    !$brPos = %strpos($tags, "+")
+  !endwhile
+  !if (%strlen($tags) > 0)
+    !$stereos = $stereos + '<<' + $tags + '>>'
+    !$mergedMask = $combineMaskWithTag($mask, $tags)
+    !if ($mergedMask != $mask)
+%set_variable_value("$" + $tags + "Legend", %true())
+      !$mask = $mergedMask
+    !endif
+  !endif
+  ' has to be last, otherwise PlantUML overwrites all tag specific skinparams
+  !$stereos = $stereos + '<<' + $elementType + '>>'
+  !$mergedMask = $combineMaskWithTag($mask, $elementType)
+  !if ($mergedMask != $mask)
+%set_variable_value("$" + $elementType + "Legend", %true())
+    !$mask = $mergedMask
+  !endif
+  !return $stereos
+!endfunction
+
+
+' if $sprite/$techn is an empty argument, try to calculate it via the defined $tag 
+!unquoted function $toElementArg($arg, $tags, $varPostfix, $elementType)
+  !if ($arg > "")
+    !return $arg
+  !endif
+
+  !if (%strlen($tags) == 0)
+    !$newArg = %get_variable_value("$" + $elementType + $varPostfix)
+    !if ($newArg > "")
+       !return $newArg
+    !else
+       !return $arg
+    !endif
+  !endif
+  !$brPos = %strpos($tags, "+")
+  !while ($brPos >= 0)
+    !$tag = %substr($tags, 0, $brPos)
+    !$newArg = %get_variable_value("$" + $tag + $varPostfix)
+    !if ($newArg > "")
+       !return $newArg
+    !endif
+    !$tags = %substr($tags, $brPos+1)
+    !$brPos = %strpos($tags, "+")
+  !endwhile
+  !if (%strlen($tags) > 0)
+    !$newArg = %get_variable_value("$" + $tags + $varPostfix)
+    !if ($newArg > "")
+       !return $newArg
+    !endif
+    !$newArg = %get_variable_value("$" + $elementType + $varPostfix)
+    !if ($newArg > "")
+       !return $newArg
+    !endif
+  !endif
+  !return $arg
+!endfunction
+
+
+!function $getContainer($label, $techn, $descr, $sprite)
+  !$container = ""
+  !if ($sprite != "")
+    !$container = $container + $getSprite($sprite) + '\n'
+  !endif
+  !$container = $container + '==' + $label
+  !if ($techn != "")
+    !$container = $container + '\n//<size:' + $TECHN_FONT_SIZE + '>[' + $techn + ']</size>//'
+  !endif
+  !if ($descr != "")
+    !$container = $container + '\n\n' + $descr
+  !endif
+  !return $container
+!endfunction
+
+
+' Elements
+' ##################################
+
+
+!unquoted procedure Person($alias, $label, $sprite="", $tags="")
+!$sprite=$toElementArg($sprite, $tags, "ElementTagSprite", "system")
+participant "$getPerson($label, '', $sprite)" as $alias $toStereos("person", $tags)
+!endprocedure
+
+
+!unquoted procedure Container($alias, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+!$sprite=$toElementArg($sprite, $tags, "ElementTagSprite", "container")
+!$techn=$toElementArg($techn, $tags, "ElementTagTechn", "container")
+participant "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("container", $tags)
+!endprocedure
+
+!unquoted procedure ContainerDb($alias, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+!$sprite=$toElementArg($sprite, $tags, "ElementTagSprite", "container")
+!$techn=$toElementArg($techn, $tags, "ElementTagTechn", "container")
+database "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("container", $tags)
+!endprocedure
+
+!unquoted procedure ContainerQueue($alias, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+!$sprite=$toElementArg($sprite, $tags, "ElementTagSprite", "container")
+!$techn=$toElementArg($techn, $tags, "ElementTagTechn", "container")
+queue "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("container", $tags)
+!endprocedure
+
+!unquoted procedure Container_Ext($alias, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+!$sprite=$toElementArg($sprite, $tags, "ElementTagSprite", "external_container")
+!$techn=$toElementArg($techn, $tags, "ElementTagTechn", "external_container")
+participant "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("external_container", $tags)
+!endprocedure
+
+!unquoted procedure ContainerDb_Ext($alias, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+!$sprite=$toElementArg($sprite, $tags, "ElementTagSprite", "external_container")
+!$techn=$toElementArg($techn, $tags, "ElementTagTechn", "external_container")
+database "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("external_container", $tags)
+!endprocedure
+
+!unquoted procedure ContainerQueue_Ext($alias, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+!$sprite=$toElementArg($sprite, $tags, "ElementTagSprite", "external_container")
+!$techn=$toElementArg($techn, $tags, "ElementTagTechn", "external_container")
+queue "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("external_container", $tags)
+!endprocedure
+
+' Styling
+' ##################################
+
+skinparam shadowing false
+skinparam participant{
+  fontColor #FFFFFF
+}
+skinparam queue{
+  fontColor #FFFFFF
+}
+skinparam participant<<person>>{
+  backgroundColor $PERSON_BG_COLOR
+  borderColor $PERSON_BORDER_COLOR
+  ' fontColor $ELEMENT_FONT_COLOR
+}
+skinparam participant<<container>>{
+  backgroundColor $CONTAINER_BG_COLOR
+  borderColor $CONTAINER_BORDER_COLOR
+}
+
+skinparam queue{
+  stereotypeFontColor white
+}
+skinparam queue<<container>>{
+  backgroundColor $CONTAINER_BG_COLOR
+  borderColor $CONTAINER_BORDER_COLOR
+}
+
+skinparam database<<container>>{
+  backgroundColor $CONTAINER_BG_COLOR
+  borderColor $CONTAINER_BORDER_COLOR
+}
+
+skinparam participant<<external_container>>{
+  backgroundColor $EXTERNAL_CONTAINER_BG_COLOR
+  fontColor $ELEMENT_FONT_COLOR
+  borderColor $EXTERNAL_CONTAINER_BORDER_COLOR
+}
+
+skinparam database<<external_container>>{
+  backgroundColor $EXTERNAL_CONTAINER_BG_COLOR
+  borderColor $EXTERNAL_CONTAINER_BORDER_COLOR
+}
+
+skinparam queue<<external_container>>{
+  backgroundColor $EXTERNAL_CONTAINER_BG_COLOR
+  borderColor $EXTERNAL_CONTAINER_BORDER_COLOR
+}
+
+skinparam ArrowFontColor #000000
+skinparam sequence {
+  LifeLineBackgroundColor #1168BD
+  LifeLineBorderColor #3C7FC0
+  GroupBackgroundColor $CONTAINER_BG_COLOR
+  GroupHeaderFontColor $ELEMENT_FONT_COLOR
+  ReferenceHeaderBackgroundColor $CONTAINER_BG_COLOR
+  stereotypeFontColor $ELEMENT_FONT_COLOR
+}
