@@ -270,6 +270,79 @@ database "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("
 queue "$getContainer($label, $techn, $descr, $sprite)" as $alias $toStereos("external_container", $tags)
 !endprocedure
 
+
+' Relationship
+' ##################################
+
+' if $sprite/$techn is an empty argument, try to calculate it via the defined $tag 
+!unquoted function $toRelArg($arg, $tags, $varPostfix)
+  !if ($arg > "")
+    !return $arg
+  !endif
+
+  !if (%strlen($tags) == 0)
+       !return $arg
+  !endif
+  !$brPos = %strpos($tags, "+")
+  !while ($brPos >= 0)
+    !$tag = %substr($tags, 0, $brPos)
+    !$newArg = %get_variable_value("$" + $tag + $varPostfix)
+    !if ($newArg > "")
+       !return $newArg
+    !endif
+    !$tags = %substr($tags, $brPos+1)
+    !$brPos = %strpos($tags, "+")
+  !endwhile
+  !if (%strlen($tags) > 0)
+    !$newArg = %get_variable_value("$" + $tags + $varPostfix)
+    !if ($newArg > "")
+       !return $newArg
+    !endif
+  !endif
+  !return $arg
+!endfunction
+
+!function $getRel($direction, $alias1, $alias2, $label, $techn, $descr, $sprite, $tags, $link)
+  !$sprite = $toRelArg($sprite, $tags, "RelTagSprite")
+  !$techn = $toRelArg($techn, $tags, "RelTagTechn")
+  !$rel = $alias1 + ' ' + $direction + ' ' + $alias2
+  !if ($tags != "")
+    !$rel = $rel + ' ' + $toStereos($tags)
+  !endif
+  !$rel = $rel + ' : '
+  !if ($sprite != "")
+    !$rel = $rel + $getSprite($sprite) + ' '
+  !endif
+  !if ($link != "")
+    !$rel = $rel + '**[[' + $link + ' ' + $label + ']]**'
+  !else
+    !$rel = $rel + '**' + $label + '**'
+  !endif
+  !if ($techn != "")
+    ' line break is not deterministic, calculate it
+    !$rel = $rel + '\n//<size:' + $TECHN_FONT_SIZE + '>[' + $breakTechn($techn, $REL_TECHN_MAX_CHAR_WIDTH) + ']</size>//'
+  !endif
+  !if ($descr != "")
+    ' line break is not deterministic, calculate it
+    !$rel = $rel + '\n\n' + $breakDescr($descr, $REL_DESCR_MAX_CHAR_WIDTH)
+  !endif
+  ' 'Probably not needed
+  ' !$prop = $getProps()
+  ' !if ($prop != "")
+  '   ' reuse table
+  '   !$rel = $rel + $prop
+  ' !endif
+  !return $rel
+!endfunction
+
+!unquoted procedure Rel($from, $to, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+$getRel("->", $from, $to, $label, $techn, $descr, $sprite, $tags, $link)
+!endprocedure
+
+!unquoted procedure Rel_Dash($from, $to, $label, $techn="", $descr="", $sprite="", $tags="", $link="")
+$getRel("-->", $from, $to, $label, $techn, $descr, $sprite, $tags, $link)
+!endprocedure
+
 ' Styling
 ' ##################################
 
@@ -319,8 +392,6 @@ skinparam queue<<external_container>>{
   borderColor $EXTERNAL_CONTAINER_BORDER_COLOR
 }
 
-skinparam ArrowFontColor $ARROW_COLOR
-skinparam ArrowColor $ARROW_COLOR
 skinparam sequence {
   LifeLineBackgroundColor #1168BD
   LifeLineBorderColor #3C7FC0
