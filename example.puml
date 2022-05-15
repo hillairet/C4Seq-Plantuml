@@ -13,7 +13,7 @@ title Order and discount processing
 
 Person("dude", "Dude")
 Container("container", "App", $sprite=python)
-ContainerDb("containerdb", "Database", "mongodb", "descr", $sprite=mongodb) 
+ContainerDb("containerdb", "Database", "mongodb", "Database description", $sprite=mongodb) 
 ContainerQueue("containerqueue", "Queue", "redis", "A useful queue", $sprite=redis)
 Container_Ext("container_ext", "External service", $sprite=nodejs)
 ContainerDb_Ext("containerdb_ext", "External DB", $sprite=mysql)
