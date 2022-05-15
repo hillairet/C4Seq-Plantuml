@@ -7,8 +7,6 @@
 !include <logos/mysql>
 !include <logos/memcached>
 
-!include c4seq.puml
-
 title Order and discount processing
 
 Person("dude", "Dude")
