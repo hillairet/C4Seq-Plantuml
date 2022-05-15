@@ -392,6 +392,8 @@ skinparam queue<<external_container>>{
   borderColor $EXTERNAL_CONTAINER_BORDER_COLOR
 }
 
+skinparam ArrowFontColor $ARROW_COLOR
+skinparam ArrowColor $ARROW_COLOR
 skinparam sequence {
   LifeLineBackgroundColor #1168BD
   LifeLineBorderColor #3C7FC0
