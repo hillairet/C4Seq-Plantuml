@@ -13,9 +13,9 @@ Person("dude", "Dude")
 Container("container", "App", $sprite=python)
 ContainerDb("containerdb", "Database", "mongodb", "Database description", $sprite=mongodb) 
 ContainerQueue("containerqueue", "Queue", "redis", "A useful queue", $sprite=redis)
-Container_Ext("container_ext", "External service", $sprite=nodejs)
-ContainerDb_Ext("containerdb_ext", "External DB", $sprite=mysql)
-ContainerQueue_Ext("containerqueue_ext", "External queue", $sprite=memcached)
+System_Ext("container_ext", "External service", $sprite=nodejs)
+SystemDb_Ext("containerdb_ext", "External DB", $sprite=mysql)
+SystemQueue_Ext("containerqueue_ext", "External queue", $sprite=memcached)
 
 Rel(dude, container, "Do things")
 activate dude
